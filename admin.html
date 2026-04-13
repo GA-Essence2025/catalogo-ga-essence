@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G&A ADMIN | Oficial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
+    <style>
+        :root { --primary-gold: #D4AF37; --bg-black: #0A0A0A; --card-bg: #1A1A1A; --text-light: #F5F5F5; --danger: #ff4444; --success: #00C851; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: var(--bg-black); color: var(--text-light); }
+
+        header { background: #151515; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #333; }
+        .tab-btn { background: none; border: none; color: #888; cursor: pointer; padding: 10px; font-weight: 600; font-size: 0.9rem; }
+        .tab-btn.active { color: var(--primary-gold); border-bottom: 2px solid var(--primary-gold); }
+
+        .search-input { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid #333; color: white; border-radius: 8px; margin-bottom: 20px; }
+
+        .form-container { background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 30px; display: none; border: 1px solid var(--primary-gold); }
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+        label { display: block; font-size: 0.7rem; color: var(--primary-gold); margin-bottom: 5px; text-transform: uppercase; font-weight: 700; }
+        input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: white; border-radius: 6px; }
+        
+        .multi-select-box { background: #000; border: 1px solid #333; padding: 10px; border-radius: 6px; max-height: 120px; overflow-y: auto; }
+        .cat-option { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 0.85rem; }
+        .cat-option input { width: auto; }
+
+        .table-responsive { width: 100%; overflow-x: auto; background: var(--card-bg); border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1000px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #222; }
+        th { background: #252525; color: var(--primary-gold); }
+        .prod-img-mini { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; text-transform: uppercase; }
+        .btn-gold { background: var(--primary-gold); color: black; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary-gold); color: var(--primary-gold); }
+        
+        /* TELAS DE LOGIN E LOADING */
+        #loadingScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; z-index: 20000; }
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; background: #000; z-index: 10000; }
+        .login-box { background: var(--card-bg); padding: 40px; border-radius: 15px; border: 1px solid var(--primary-gold); width: 350px; text-align: center; }
+        .checkbox-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px; color: var(--primary-gold); font-size: 0.85rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="loadingScreen">
+        <h2 style="color: var(--primary-gold); margin-bottom: 10px; letter-spacing: 2px;">G&A ADMIN</h2>
+        <p style="color: #888; font-size: 0.9rem;">Verificando acesso seguro...</p>
+    </div>
+
+    <div id="loginScreen">
+        <div class="login-box">
+            <h2 style="color: var(--primary-gold); margin-bottom: 20px;">G&A ADMIN</h2>
+            <input type="email" id="loginEmail" placeholder="E-mail" style="margin-bottom: 10px;">
+            <input type="password" id="loginPass" placeholder="Senha">
+            
+            <label class="checkbox-container">
+                <input type="checkbox" id="rememberMe"> Salvar senha neste dispositivo
+            </label>
+
+            <button class="btn btn-gold" style="width: 100%; margin-top: 20px;" onclick="handleLogin()">Entrar</button>
+        </div>
+    </div>
+
+    <div id="adminDashboard" style="display:none;">
+        <header>
+            <div style="font-weight: 700; color: var(--primary-gold);">G&A ESSENCE | PAINEL</div>
+            <button class="btn btn-outline" onclick="handleLogout()">Sair</button>
+        </header>
+
+        <div class="container">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('produtos')">Produtos</button>
+                <button class="tab-btn" onclick="switchTab('listas')">Marcas e Categorias</button>
+            </div>
+
+            <div id="tab-produtos">
+                <input type="text" id="adminSearch" class="search-input" placeholder="Buscar produto..." onkeyup="filterProducts()">
+                
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Estoque</h2>
+                    <button class="btn btn-gold" onclick="toggleForm()">+ Novo Produto</button>
+                </div>
+
+                <div id="productForm" class="form-container">
+                    <div class="grid-form">
+                        <div><label>Nome</label><input type="text" id="pNome"></div>
+                        <div><label>Código</label><input type="text" id="pCodigo"></div>
+                        <div><label>Marca</label><select id="pMarcaSelect"></select></div>
+                        <div><label>Custo (R$)</label><input type="text" id="pCusto"></div>
+                        <div><label>Preço Vista</label><input type="text" id="pPrecoVista"></div>
+                        <div><label>Preço Cartão</label><input type="text" id="pPrecoCartao"></div>
+                        <div><label>Estoque</label><input type="number" id="pEstoque"></div>
+                        <div><label>Status</label><select id="pStatus"><option value="Disponível">Disponível</option><option value="Esgotado">Esgotado</option></select></div>
+                        <div style="grid-column: span 1;"><label>Categorias</label><div id="pCategoriaCheckboxes" class="multi-select-box"></div></div>
+                        <div><label>Ativo?</label><select id="pAtivo"><option value="true">Sim</option><option value="false">Não</option></select></div>
+                        <div style="grid-column: span 2;"><label>Fotos (Upload)</label><input type="file" id="pImagensFile" multiple accept="image/*"></div>
+                        <div style="grid-column: span 3;"><label>Descrição</label><textarea id="pDescricao" rows="2"></textarea></div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-gold" id="btnSave" onclick="saveProduct()">Salvar</button>
+                        <button class="btn btn-outline" onclick="toggleForm()">Cancelar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Ordem</th><th>Foto</th><th>Nome</th><th>Marca/Cat</th><th>Valores</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="adminProductList"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-listas" style="display:none;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="background:var(--card-bg); padding:20px; border-radius:10px;">
+                        <h3>Marcas</h3>
+                        <div style="display:flex; gap:10px; margin: 10px 0;"><input type="text" id="newMarca"><button class="btn btn-gold" onclick="addToList('marcas', 'newMarca')">Add</button></div>
+                        <div id="listMarcas"></div>
+                    </div>
+                    <div style="background:var(--card-bg); padding:20px; border-radius:10px;">
+                        <h3>Categorias</h3>
+                        <div style="display:flex; gap:10px; margin: 10px 0;"><input type="text" id="newCat"><button class="btn btn-gold" onclick="addToList('categorias', 'newCat')">Add</button></div>
+                        <div id="listCategorias"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJubljB6mFst0-VjvS06KtfNm6s3HGwJI",
+            authDomain: "ga-essence-app.firebaseapp.com",
+            projectId: "ga-essence-app",
+            storageBucket: "ga-essence-app.firebasestorage.app",
+            messagingSenderId: "449116898508",
+            appId: "1:449116898508:web:848b65f0aeb1b0df50ee69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let allProducts = [];
+        let editingId = null;
+        let isFirstLoad = true;
+
+        // LÓGICA DE LOGIN COM OPÇÃO DE LEMBRAR SENHA
+        window.handleLogin = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const remember = document.getElementById('rememberMe').checked;
+
+            try {
+                // Define se a sessão será fechada ao fechar a aba ou se continuará logada
+                await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+                await signInWithEmailAndPassword(auth, email, pass);
+            } 
+            catch { alert("E-mail ou senha incorretos."); }
+        };
+        
+        window.handleLogout = () => signOut(auth);
+
+        // CONTROLE DA TELA DE LOGIN VS ADMIN
+        onAuthStateChanged(auth, user => {
+            if (isFirstLoad) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                isFirstLoad = false;
+            }
+
+            if(user) { 
+                document.getElementById('loginScreen').style.display='none'; 
+                document.getElementById('adminDashboard').style.display='block'; 
+                loadAll(); 
+            } else { 
+                document.getElementById('loginScreen').style.display='flex'; 
+                document.getElementById('adminDashboard').style.display='none'; 
+            }
+        });
+
+        window.switchTab = tab => {
+            document.getElementById('tab-produtos').style.display = tab === 'produtos' ? 'block' : 'none';
+            document.getElementById('tab-listas').style.display = tab === 'listas' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        };
+
+        async function loadAll() { await loadListas(); await loadProducts(); }
+
+        async function loadListas() {
+            const mSnap = await getDocs(collection(db, "marcas"));
+            const cSnap = await getDocs(collection(db, "categorias"));
+            document.getElementById('pMarcaSelect').innerHTML = mSnap.docs.map(d => `<option value="${d.data().nome}">${d.data().nome}</option>`).join('');
+            document.getElementById('pCategoriaCheckboxes').innerHTML = cSnap.docs.map(d => `<label class="cat-option"><input type="checkbox" name="categorias" value="${d.data().nome}"> ${d.data().nome}</label>`).join('');
+            document.getElementById('listMarcas').innerHTML = mSnap.docs.map(d => `<div style="padding:5px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${d.data().nome} <i class="fas fa-trash" onclick="deleteFromList('marcas','${d.id}')"></i></div>`).join('');
+            document.getElementById('listCategorias').innerHTML = cSnap.docs.map(d => `<div style="padding:5px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${d.data().nome} <i class="fas fa-trash" onclick="deleteFromList('categorias','${d.id}')"></i></div>`).join('');
+        }
+
+        async function loadProducts() {
+            const snap = await getDocs(query(collection(db, "catalogo"), orderBy("ordem_exibicao", "asc")));
+            allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderTable(allProducts);
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('adminProductList');
+            tbody.innerHTML = list.map(p => `
+                <tr data-id="${p.id}"><td style="cursor:grab"><i class="fas fa-grip-lines"></i></td>
+                <td><img src="${p.imagens && p.imagens.length > 0 ? p.imagens[0] : (p.imagem_url || '')}" class="prod-img-mini"></td>
+                <td><strong>${p.nome}</strong><br><small>${p.codigo || ''}</small></td>
+                <td>${p.marca || ''}<br><small>${Array.isArray(p.categoria) ? p.categoria.join(", ") : p.categoria || ""}</small></td>
+                <td>V: ${p.valor_vista}<br>C: ${p.valor_cartao}</td><td>${p.status || 'Disponível'}</td>
+                <td><i class="fas fa-edit" style="color:gold;cursor:pointer" onclick="editProduct('${p.id}')"></i><i class="fas fa-trash" style="color:red;cursor:pointer;margin-left:10px" onclick="deleteProduct('${p.id}')"></i></td></tr>
+            `).join('');
+            new Sortable(tbody, { animation: 150, onEnd: async () => {
+                const rows = tbody.querySelectorAll('tr');
+                for(let i=0; i<rows.length; i++) { await updateDoc(doc(db, "catalogo", rows[i].dataset.id), { ordem_exibicao: i }); }
+            }});
+        }
+
+        window.editProduct = id => {
+            const p = allProducts.find(x => x.id === id);
+            if(!p) return; editingId = id;
+            document.getElementById('pNome').value = p.nome || '';
+            document.getElementById('pCodigo').value = p.codigo || '';
+            document.getElementById('pMarcaSelect').value = p.marca || '';
+            document.getElementById('pCusto').value = p.custo || '';
+            document.getElementById('pPrecoVista').value = p.valor_vista || '';
+            document.getElementById('pPrecoCartao').value = p.valor_cartao || '';
+            document.getElementById('pEstoque').value = p.estoque || 0;
+            document.getElementById('pStatus').value = p.status || 'Disponível';
+            document.getElementById('pAtivo').value = p.ativo === false ? 'false' : 'true';
+            document.getElementById('pDescricao').value = p.descricao || '';
+            const cats = Array.isArray(p.categoria) ? p.categoria : (p.categoria ? p.categoria.split(',').map(s=>s.trim()) : []);
+            document.querySelectorAll('input[name="categorias"]').forEach(cb => { cb.checked = cats.includes(cb.value); });
+            document.getElementById('productForm').style.display='block'; window.scrollTo(0,0);
+        };
+
+        window.saveProduct = async () => {
+            const btn = document.getElementById('btnSave'); btn.disabled = true; btn.innerText = "Salvando...";
+            const fileInput = document.getElementById('pImagensFile');
+            const files = fileInput.files;
+            
+            // PROTEÇÃO: GARANTE QUE AS FOTOS ANTIGAS NÃO SUMAM SE NENHUMA NOVA FOR ENVIADA
+            let finalImgs = editingId ? (allProducts.find(x=>x.id===editingId).imagens || []) : [];
+
+            try {
+                if(files.length > 0) {
+                    finalImgs = [];
+                    for(let f of files) {
+                        const sRef = ref(storage, `catalogo/${Date.now()}_${f.name}`);
+                        const snap = await uploadBytes(sRef, f);
+                        finalImgs.push(await getDownloadURL(snap.ref));
+                    }
+                }
+                const data = {
+                    nome: document.getElementById('pNome').value, codigo: document.getElementById('pCodigo').value,
+                    marca: document.getElementById('pMarcaSelect').value, custo: document.getElementById('pCusto').value,
+                    valor_vista: document.getElementById('pPrecoVista').value, valor_cartao: document.getElementById('pPrecoCartao').value,
+                    estoque: document.getElementById('pEstoque').value, status: document.getElementById('pStatus').value,
+                    ativo: document.getElementById('pAtivo').value === 'true', descricao: document.getElementById('pDescricao').value,
+                    categoria: Array.from(document.querySelectorAll('input[name="categorias"]:checked')).map(cb => cb.value),
+                    imagens: finalImgs, imagem_url: finalImgs[0] || ""
+                };
+                if(editingId) await updateDoc(doc(db, "catalogo", editingId), data);
+                else { data.ordem_exibicao = Date.now(); await addDoc(collection(db, "catalogo"), data); }
+                
+                // ATUALIZAÇÃO INSTANTÂNEA: Recarrega a tabela e fecha o form sem dar Refresh (acaba com os problemas de login)
+                await loadProducts();
+                toggleForm();
+                btn.disabled = false;
+                btn.innerText = "Salvar";
+
+            } catch(error) { 
+                alert("Erro ao salvar."); 
+                console.error(error);
+                btn.disabled = false; 
+                btn.innerText = "Salvar";
+            }
+        };
+
+        window.toggleForm = () => {
+            const f = document.getElementById('productForm');
+            f.style.display = f.style.display==='block' ? 'none' : 'block';
+            if(f.style.display==='none') { 
+                editingId=null; 
+                document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(i=>i.value=''); 
+                document.getElementById('pImagensFile').value = '';
+            }
+        };
+
+        window.filterProducts = () => {
+            const val = document.getElementById('adminSearch').value.toLowerCase();
+            renderTable(allProducts.filter(p => p.nome.toLowerCase().includes(val) || p.codigo?.toLowerCase().includes(val)));
+        };
+
+        window.addToList = async (coll, id) => {
+            const v = document.getElementById(id).value;
+            if(v) { await addDoc(collection(db, coll), {nome: v}); loadListas(); document.getElementById(id).value=''; }
+        };
+
+        window.deleteFromList = async (coll, id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db, coll, id)); loadListas(); } };
+        window.deleteProduct = async id => { if(confirm("Excluir?")) { await deleteDoc(doc(db, "catalogo", id)); loadProducts(); } };
+    </script>
+</body>
+</html>
