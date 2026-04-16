@@ -6,6 +6,9 @@
     <title>Catálogo G&A ESSENCE</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#D4AF37">
+    <link rel="apple-touch-icon" href="https://firebasestorage.googleapis.com/v0/b/ga-essence-app.firebasestorage.app/o/WhatsApp%20Image%202026-01-26%20at%2015.11.23-Photoroom.png?alt=media">
     
     <style>
         :root { --primary-gold: #D4AF37; --bg-black: #0A0A0A; --card-bg: #1A1A1A; --text-light: #F5F5F5; --text-muted: #A0A0A0; }
@@ -469,6 +472,17 @@
         };
 
         loadProducts();
+    </script>
+	<script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('App G&A Essence registada com sucesso!');
+                }).catch(err => {
+                    console.log('Erro ao registar a App: ', err);
+                });
+            });
+        }
     </script>
 </body>
 </html>

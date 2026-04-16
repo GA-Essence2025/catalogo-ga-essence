@@ -1,0 +1,21 @@
+{
+  "name": "Catálogo G&A Essence",
+  "short_name": "G&A Essence",
+  "description": "Catálogo digital de perfumes originais.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#D4AF37",
+  "icons": [
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/ga-essence-app.firebasestorage.app/o/WhatsApp%20Image%202026-01-26%20at%2015.11.23-Photoroom.png?alt=media",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/ga-essence-app.firebasestorage.app/o/WhatsApp%20Image%202026-01-26%20at%2015.11.23-Photoroom.png?alt=media",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
