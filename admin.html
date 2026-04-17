@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G&A ADMIN | Oficial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
+        :root { --primary-gold: #D4AF37; --bg-black: #0A0A0A; --card-bg: #1A1A1A; --text-light: #F5F5F5; --danger: #ff4444; --success: #00C851; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: var(--bg-black); color: var(--text-light); }
+
+        /* HEADER */
+        header { background: #151515; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        
+        /* TABS & SEARCH */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #333; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn { background: none; border: none; color: #888; cursor: pointer; padding: 10px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; white-space: nowrap; }
+        .tab-btn.active { color: var(--primary-gold); border-bottom: 2px solid var(--primary-gold); }
+
+        .search-input { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid #333; color: white; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; }
+
+        /* FORMULÁRIO */
+        .form-container { background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 30px; display: none; border: 1px solid var(--primary-gold); }
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+        label { display: block; font-size: 0.7rem; color: var(--primary-gold); margin-bottom: 5px; text-transform: uppercase; font-weight: 700; }
+        input, select, textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: white; border-radius: 6px; font-size: 1rem; }
+        
+        /* TABELA DESKTOP */
+        .table-responsive { width: 100%; overflow-x: auto; background: var(--card-bg); border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1000px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #222; }
+        th { background: #252525; color: var(--primary-gold); }
+        
+        .prod-img-mini { width: 50px; height: 50px; object-fit: contain; border-radius: 6px; background: #000; border: 1px solid #333; display: block; }
+        .no-img-placeholder { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: #222; border-radius: 6px; color: var(--primary-gold); font-size: 1.2rem; border: 1px dashed #444; }
+        
+        /* BOTÕES */
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; text-transform: uppercase; transition: 0.3s; font-size: 0.85rem; }
+        .btn-gold { background: var(--primary-gold); color: black; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary-gold); color: var(--primary-gold); }
+        .title-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        
+        /* LISTAS (MARCAS/CAT) */
+        .lists-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        /* LOGIN SCREENS */
+        #loadingScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; z-index: 20000; }
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; background: #000; z-index: 10000; padding: 20px; }
+        .login-box { background: var(--card-bg); padding: 40px; border-radius: 15px; border: 1px solid var(--primary-gold); width: 100%; max-width: 400px; text-align: center; }
+
+        /* 🔥 ANALYTICS CSS 🔥 */
+        .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #333; text-align: center; position: relative; overflow: hidden; }
+        .stat-card i { position: absolute; top: -10px; right: -10px; font-size: 4rem; opacity: 0.05; color: var(--primary-gold); }
+        .stat-card h3 { color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px; font-weight: 600; letter-spacing: 1px; }
+        .stat-card p { color: var(--primary-gold); font-size: 2.2rem; font-weight: 700; line-height: 1; }
+        .charts-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .chart-box { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        .chart-box h3 { color: var(--primary-gold); font-size: 1rem; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        @media (max-width: 768px) {
+            header { padding: 15px; }
+            .container { padding: 15px; }
+            .charts-container { grid-template-columns: 1fr; }
+            .btn { width: 100%; display: block; margin-bottom: 10px; }
+            .btn-inline { width: auto; display: inline-block; margin-bottom: 0; }
+            .title-actions { flex-direction: column; gap: 15px; align-items: stretch; }
+            .title-actions h2 { text-align: center; }
+            .grid-form { grid-template-columns: 1fr; }
+            .lists-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingScreen">
+        <h2 style="color: var(--primary-gold); letter-spacing: 2px;">G&A ADMIN</h2>
+        <p style="color: #888;">Verificando acesso...</p>
+    </div>
+
+    <div id="loginScreen">
+        <div class="login-box">
+            <h2 style="color: var(--primary-gold); margin-bottom: 20px;">G&A ADMIN</h2>
+            <input type="email" id="loginEmail" placeholder="E-mail" style="margin-bottom: 15px;">
+            <input type="password" id="loginPass" placeholder="Senha" style="margin-bottom: 15px;">
+            <label style="display:flex; align-items:center; gap:8px; color:var(--primary-gold); font-size:0.8rem; cursor:pointer; justify-content:center; margin-bottom: 20px;">
+                <input type="checkbox" id="rememberMe"> Salvar senha neste dispositivo
+            </label>
+            <button class="btn btn-gold" onclick="handleLogin()">Entrar no Sistema</button>
+        </div>
+    </div>
+
+    <div id="adminDashboard" style="display:none;">
+        <header>
+            <div style="font-weight: 700; color: var(--primary-gold); font-size: 1.2rem;">G&A ESSENCE</div>
+            <button class="btn btn-outline btn-inline" onclick="handleLogout()" style="padding: 8px 15px; font-size: 0.75rem;">Sair</button>
+        </header>
+
+        <div class="container">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('produtos')"><i class="fas fa-box"></i> Estoque & Produtos</button>
+                <button class="tab-btn" onclick="switchTab('listas')"><i class="fas fa-list"></i> Marcas & Categorias</button>
+                <button class="tab-btn" onclick="switchTab('analytics')"><i class="fas fa-chart-line"></i> Analytics</button>
+            </div>
+
+            <div id="tab-produtos">
+                <input type="text" id="adminSearch" class="search-input" placeholder="🔍 Buscar produto..." onkeyup="filterProducts()">
+                
+                <div class="title-actions">
+                    <h2>Meu Estoque</h2>
+                    <button class="btn btn-gold" onclick="toggleForm()">+ Novo Produto</button>
+                </div>
+
+                <div id="productForm" class="form-container">
+                    <div class="grid-form">
+                        <div><label>Nome do Produto</label><input type="text" id="pNome"></div>
+                        <div><label>Código</label><input type="text" id="pCodigo"></div>
+                        <div><label>Marca</label><select id="pMarcaSelect"></select></div>
+                        <div><label>Custo (R$)</label><input type="text" id="pCusto"></div>
+                        <div><label>Preço Vista (Pix)</label><input type="text" id="pPrecoVista"></div>
+                        <div><label>Preço Cartão</label><input type="text" id="pPrecoCartao"></div>
+                        <div><label>Estoque</label><input type="number" id="pEstoque"></div>
+                        <div><label>Status</label><select id="pStatus"><option value="Disponível">Disponível</option><option value="Esgotado">Esgotado / Encomenda</option></select></div>
+                        <div style="grid-column: span 1;"><label>Categorias</label><div id="pCategoriaCheckboxes" style="background:#000; padding:10px; border-radius:6px; max-height:120px; overflow-y:auto; border:1px solid #333;"></div></div>
+                        <div><label>Visível no Catálogo?</label><select id="pAtivo"><option value="true">Sim (Ativo)</option><option value="false">Não (Oculto)</option></select></div>
+                        <div style="grid-column: 1 / -1;"><label>Fotos (Upload)</label><input type="file" id="pImagensFile" multiple accept="image/*" style="background: transparent; padding: 0;"></div>
+                        <div style="grid-column: 1 / -1;"><label>Descrição</label><textarea id="pDescricao" rows="3"></textarea></div>
+                    </div>
+                    <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+                        <button class="btn btn-gold" id="btnSave" onclick="saveProduct()">Salvar Produto</button>
+                        <button class="btn btn-outline" onclick="toggleForm()">Cancelar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th></th><th>Foto</th><th>Nome e Código</th><th>Marca e Categorias</th><th>Valores</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="adminProductList"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-listas" style="display:none;">
+                 <div class="lists-grid">
+                    <div style="background:var(--card-bg); padding:20px; border-radius:10px; border: 1px solid #333;">
+                        <h3 style="color: var(--primary-gold); margin-bottom: 15px;">Marcas</h3>
+                        <div style="display:flex; gap:10px; margin-bottom: 15px;">
+                            <input type="text" id="newMarca" placeholder="Nova marca...">
+                            <button class="btn btn-gold btn-inline" onclick="addToList('marcas', 'newMarca')">Add</button>
+                        </div>
+                        <div id="listMarcas" style="max-height: 300px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <div style="background:var(--card-bg); padding:20px; border-radius:10px; border: 1px solid #333;">
+                        <h3 style="color: var(--primary-gold); margin-bottom: 15px;">Categorias</h3>
+                        <div style="display:flex; gap:10px; margin-bottom: 15px;">
+                            <input type="text" id="newCat" placeholder="Nova categoria...">
+                            <button class="btn btn-gold btn-inline" onclick="addToList('categorias', 'newCat')">Add</button>
+                        </div>
+                        <div id="listCategorias" style="max-height: 300px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-analytics" style="display:none;">
+                <h2 style="margin-bottom: 20px;">Visão Geral do Negócio</h2>
+                
+                <div class="analytics-grid">
+                    <div class="stat-card"><i class="fas fa-eye"></i><h3>Acessos ao Site</h3><p id="an_acessos">0</p></div>
+                    <div class="stat-card"><i class="fas fa-users"></i><h3>Visitantes Únicos</h3><p id="an_unicos">0</p></div>
+                    <div class="stat-card"><i class="fas fa-stopwatch"></i><h3>Sessões Ativas</h3><p id="an_sessoes">0</p></div>
+                    <div class="stat-card"><i class="fas fa-clock"></i><h3>Tempo Médio</h3><p id="an_tempo" style="font-size: 1.5rem; margin-top: 10px;">0m 0s</p></div>
+                </div>
+
+                <div class="analytics-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    <div class="stat-card" style="border-color:#25D366"><i class="fas fa-shopping-bag"></i><h3>Cliques: Comprar</h3><p id="an_comprar">0</p></div>
+                    <div class="stat-card" style="border-color:#25D366"><i class="fab fa-whatsapp"></i><h3>Cliques: WhatsApp</h3><p id="an_wpp">0</p></div>
+                    <div class="stat-card" style="border-color:var(--primary-gold)"><i class="fas fa-search-plus"></i><h3>Cliques: Solicitar</h3><p id="an_solicitar">0</p></div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <h3><i class="fas fa-mobile-alt"></i> Dispositivos</h3>
+                        <canvas id="chartDevices" style="max-height: 250px;"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3><i class="fas fa-fire"></i> Top 5 Mais Clicados</h3>
+                        <div id="rankingList" style="margin-top: 15px; font-size: 0.9rem;">
+                            Carregando ranking...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJubljB6mFst0-VjvS06KtfNm6s3HGwJI",
+            authDomain: "ga-essence-app.firebaseapp.com",
+            projectId: "ga-essence-app",
+            storageBucket: "ga-essence-app.firebasestorage.app",
+            messagingSenderId: "449116898508",
+            appId: "1:449116898508:web:848b65f0aeb1b0df50ee69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let allProducts = [];
+        let editingId = null;
+        let chartDevicesInstance = null;
+
+        onAuthStateChanged(auth, user => {
+            document.getElementById('loadingScreen').style.display = 'none';
+            if(user) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                loadAll();
+            } else {
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('adminDashboard').style.display = 'none';
+            }
+        });
+
+        window.handleLogin = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const remember = document.getElementById('rememberMe').checked;
+            try {
+                await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch { alert("Acesso negado. Verifique o email e senha."); }
+        };
+
+        window.handleLogout = () => signOut(auth);
+
+        async function loadAll() {
+            const mSnap = await getDocs(collection(db, "marcas"));
+            const cSnap = await getDocs(collection(db, "categorias"));
+            document.getElementById('pMarcaSelect').innerHTML = mSnap.docs.map(d => `<option value="${d.data().nome}">${d.data().nome}</option>`).join('');
+            document.getElementById('pCategoriaCheckboxes').innerHTML = cSnap.docs.map(d => `<label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; margin-bottom:8px;"><input type="checkbox" name="categorias" value="${d.data().nome}" style="width:16px; height:16px;"> ${d.data().nome}</label>`).join('');
+            
+            document.getElementById('listMarcas').innerHTML = mSnap.docs.map(d => `<div style="padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">${d.data().nome} <i class="fas fa-trash" style="color:var(--danger); cursor:pointer; padding:5px;" onclick="deleteFromList('marcas','${d.id}')"></i></div>`).join('');
+            document.getElementById('listCategorias').innerHTML = cSnap.docs.map(d => `<div style="padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">${d.data().nome} <i class="fas fa-trash" style="color:var(--danger); cursor:pointer; padding:5px;" onclick="deleteFromList('categorias','${d.id}')"></i></div>`).join('');
+            
+            await loadProducts();
+            await loadAnalytics(); // CARREGA OS DADOS DE MONITORAMENTO
+        }
+
+        async function loadProducts() {
+            const snap = await getDocs(query(collection(db, "catalogo"), orderBy("ordem_exibicao", "asc")));
+            allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderTable(allProducts);
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('adminProductList');
+            tbody.innerHTML = list.map(p => {
+                let displayImg = null;
+                if (p.imagens && Array.isArray(p.imagens) && p.imagens.length > 0) displayImg = p.imagens[0];
+                else if (p.imagem_url) displayImg = p.imagem_url;
+                else if (p.imagem) displayImg = p.imagem;
+                else if (p.url) displayImg = p.url;
+
+                const imgHtml = displayImg 
+                    ? `<img src="${displayImg}" class="prod-img-mini" onerror="this.parentElement.innerHTML='<div class=\'no-img-placeholder\'><i class=\'fas fa-image\'></i></div>'">` 
+                    : `<div class="no-img-placeholder"><i class="fas fa-image"></i></div>`;
+
+                return `
+                <tr data-id="${p.id}">
+                    <td><i class="fas fa-grip-lines" style="cursor:grab"></i></td>
+                    <td>${imgHtml}</td>
+                    <td><strong>${p.nome}</strong><br><small style="color:var(--primary-gold);">Cód: ${p.codigo || '---'}</small></td>
+                    <td>${p.marca || 'Sem Marca'}<br><small>${Array.isArray(p.categoria) ? p.categoria.join(", ") : p.categoria || ""}</small></td>
+                    <td>V: R$ ${p.valor_vista}<br><small style="color:#888">C: R$ ${p.valor_cartao}</small></td>
+                    <td>${p.status === 'Esgotado' ? '<span style="color:var(--danger)">Encomenda</span>' : '<span style="color:var(--success)">Disp.</span>'}</td>
+                    <td>
+                        <i class="fas fa-edit" style="color:gold; cursor:pointer; font-size:1.1rem; padding:5px;" onclick="editProduct('${p.id}')"></i>
+                        <i class="fas fa-trash" style="color:var(--danger); cursor:pointer; margin-left:15px; font-size:1.1rem; padding:5px;" onclick="deleteProduct('${p.id}')"></i>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            new Sortable(tbody, { 
+                animation: 150, 
+                handle: '.fa-grip-lines',
+                onEnd: async () => {
+                    const rows = tbody.querySelectorAll('tr');
+                    for(let i=0; i<rows.length; i++) { 
+                        await updateDoc(doc(db, "catalogo", rows[i].dataset.id), { ordem_exibicao: i }); 
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // 🔥 FUNÇÃO DE CARREGAMENTO DO ANALYTICS 🔥
+        // ==========================================
+        async function loadAnalytics() {
+            try {
+                const snap = await getDocs(collection(db, "analytics"));
+                let globais = {};
+                let ranking = {};
+
+                snap.forEach(doc => {
+                    if(doc.id === 'dadosGlobais') globais = doc.data();
+                    if(doc.id === 'rankingProdutos') ranking = doc.data();
+                });
+
+                const sessoes = globais.sessoes || 0;
+                const tempo = globais.tempoTotalSegundos || 0;
+                const mediaSegundos = sessoes > 0 ? Math.floor(tempo / sessoes) : 0;
+
+                // Preencher Cards
+                document.getElementById('an_acessos').innerText = globais.acessosTotais || 0;
+                document.getElementById('an_unicos').innerText = globais.unicos || 0;
+                document.getElementById('an_sessoes').innerText = sessoes;
+                document.getElementById('an_tempo').innerText = `${Math.floor(mediaSegundos/60)}m ${mediaSegundos%60}s`;
+                document.getElementById('an_comprar').innerText = globais.clickComprar || 0;
+                document.getElementById('an_wpp').innerText = globais.clickWhatsapp || 0;
+                document.getElementById('an_solicitar').innerText = globais.clickSolicitar || 0;
+
+                // Gráfico de Dispositivos (Chart.js)
+                const ctx = document.getElementById('chartDevices').getContext('2d');
+                if(chartDevicesInstance) chartDevicesInstance.destroy();
+                chartDevicesInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Mobile (Celular)', 'Desktop (PC)'],
+                        datasets: [{ 
+                            data: [globais.deviceMobile || 0, globais.deviceDesktop || 0], 
+                            backgroundColor: ['#D4AF37', '#333333'], 
+                            borderColor: '#0A0A0A',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { plugins: { legend: { labels: { color: '#fff' }, position: 'bottom' } } }
+                });
+
+                // Ranking de Produtos
+                const rankArr = Object.entries(ranking).sort((a,b) => b[1] - a[1]).slice(0, 5);
+                let rankHtml = rankArr.map((item, i) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#151515; border-radius:8px; margin-bottom:8px; border:1px solid #333;">
+                        <span style="color:#fff;"><strong>${i+1}º</strong> - ${item[0]}</span> 
+                        <span style="background:rgba(212,175,55,0.2); color:var(--primary-gold); padding:4px 10px; border-radius:20px; font-weight:bold; font-size:0.8rem;">${item[1]} <i class="fas fa-mouse-pointer" style="font-size:0.7rem;"></i></span>
+                    </div>
+                `).join('');
+                if(rankArr.length === 0) rankHtml = "<p style='color:#888;'>Nenhum clique registrado ainda.</p>";
+                document.getElementById('rankingList').innerHTML = rankHtml;
+
+            } catch (e) {
+                console.log("Analytics ainda não inicializado ou erro na leitura.");
+            }
+        }
+
+        window.editProduct = id => {
+            const p = allProducts.find(x => x.id === id);
+            if(!p) return;
+            editingId = id;
+            document.getElementById('pNome').value = p.nome;
+            document.getElementById('pCodigo').value = p.codigo || '';
+            document.getElementById('pMarcaSelect').value = p.marca || '';
+            document.getElementById('pCusto').value = p.custo || '';
+            document.getElementById('pPrecoVista').value = p.valor_vista;
+            document.getElementById('pPrecoCartao').value = p.valor_cartao;
+            document.getElementById('pEstoque').value = p.estoque || 0;
+            document.getElementById('pStatus').value = p.status || 'Disponível';
+            document.getElementById('pAtivo').value = p.ativo === false ? 'false' : 'true';
+            document.getElementById('pDescricao').value = p.descricao || '';
+            
+            const cats = Array.isArray(p.categoria) ? p.categoria : (p.categoria ? p.categoria.split(',').map(s=>s.trim()) : []);
+            document.querySelectorAll('input[name="categorias"]').forEach(cb => { cb.checked = cats.includes(cb.value); });
+            
+            document.getElementById('productForm').style.display = 'block';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        window.saveProduct = async () => {
+            const btn = document.getElementById('btnSave'); btn.disabled = true; btn.innerText = "A SALVAR...";
+            const fileInput = document.getElementById('pImagensFile');
+            let finalImgs = editingId ? (allProducts.find(x=>x.id===editingId).imagens || []) : [];
+
+            try {
+                if(fileInput.files.length > 0) {
+                    finalImgs = [];
+                    for(let f of fileInput.files) {
+                        const sRef = ref(storage, `catalogo/${Date.now()}_${f.name}`);
+                        const snap = await uploadBytes(sRef, f);
+                        finalImgs.push(await getDownloadURL(snap.ref));
+                    }
+                }
+
+                const data = {
+                    nome: document.getElementById('pNome').value,
+                    codigo: document.getElementById('pCodigo').value,
+                    marca: document.getElementById('pMarcaSelect').value,
+                    custo: document.getElementById('pCusto').value,
+                    valor_vista: document.getElementById('pPrecoVista').value,
+                    valor_cartao: document.getElementById('pPrecoCartao').value,
+                    estoque: document.getElementById('pEstoque').value,
+                    status: document.getElementById('pStatus').value,
+                    ativo: document.getElementById('pAtivo').value === 'true',
+                    descricao: document.getElementById('pDescricao').value,
+                    imagens: finalImgs,
+                    imagem_url: finalImgs[0] || "",
+                    categoria: Array.from(document.querySelectorAll('input[name="categorias"]:checked')).map(cb => cb.value)
+                };
+
+                if(editingId) await updateDoc(doc(db, "catalogo", editingId), data);
+                else { data.ordem_exibicao = Date.now(); await addDoc(collection(db, "catalogo"), data); }
+                
+                await loadProducts();
+                toggleForm();
+            } catch(e) { alert("Erro ao salvar o produto. Verifique sua conexão."); }
+            btn.disabled = false; btn.innerText = "SALVAR PRODUTO";
+        };
+
+        window.toggleForm = () => {
+            const f = document.getElementById('productForm');
+            f.style.display = f.style.display==='block' ? 'none' : 'block';
+            if(f.style.display==='none') {
+                editingId = null;
+                document.querySelectorAll('#productForm input:not([type="checkbox"]), #productForm textarea').forEach(i=>i.value='');
+                document.querySelectorAll('input[name="categorias"]').forEach(cb => cb.checked = false);
+            }
+        };
+
+        window.addToList = async (coll, id) => {
+            const v = document.getElementById(id).value;
+            if(v) { await addDoc(collection(db, coll), {nome: v}); loadAll(); document.getElementById(id).value=''; }
+        };
+        window.deleteFromList = async (coll, id) => { if(confirm("Tem certeza que deseja excluir?")) { await deleteDoc(doc(db, coll, id)); loadAll(); } };
+        window.deleteProduct = async id => { if(confirm("ATENÇÃO: Excluir produto permanentemente?")) { await deleteDoc(doc(db, "catalogo", id)); loadProducts(); } };
+        
+        window.switchTab = tab => {
+            document.getElementById('tab-produtos').style.display = tab==='produtos' ? 'block' : 'none';
+            document.getElementById('tab-listas').style.display = tab==='listas' ? 'block' : 'none';
+            document.getElementById('tab-analytics').style.display = tab==='analytics' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            if(tab==='analytics') loadAnalytics(); // Atualiza os dados ao abrir a aba
+        };
+
+        window.filterProducts = () => {
+            const val = document.getElementById('adminSearch').value.toLowerCase();
+            renderTable(allProducts.filter(p => p.nome.toLowerCase().includes(val) || p.codigo?.toLowerCase().includes(val)));
+        };
+
+    </script>
+</body>
+</html>
