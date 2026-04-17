@@ -288,7 +288,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJubljB6mFst0-VjvS06KtfNm6s3HGwJI",
@@ -301,6 +301,39 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+// 🔥 ANALYTICS CORE 🔥
+        let sessionStart = Date.now();
+        let timeSent = false;
+
+        async function trackEvent(field, amount = 1) {
+            try { await setDoc(doc(db, "analytics", "dadosGlobais"), { [field]: increment(amount) }, { merge: true }); } catch(e) {}
+        }
+        async function trackProductClick(productName) {
+            try { await setDoc(doc(db, "analytics", "rankingProdutos"), { [productName]: increment(1) }, { merge: true }); } catch(e) {}
+        }
+
+        // Registro de Acesso e Dispositivo
+        window.addEventListener('load', () => {
+            let isNew = !localStorage.getItem('ga_visit');
+            if(isNew) localStorage.setItem('ga_visit', 'true');
+            let isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+            setDoc(doc(db, "analytics", "dadosGlobais"), {
+                acessosTotais: increment(1),
+                sessoes: increment(1),
+                unicos: isNew ? increment(1) : increment(0),
+                deviceMobile: isMobile ? increment(1) : increment(0),
+                deviceDesktop: !isMobile ? increment(1) : increment(0)
+            }, { merge: true });
+        });
+
+        // Registro de Tempo de Permanência
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && !timeSent) {
+                let timeSpent = Math.floor((Date.now() - sessionStart) / 1000);
+                if(timeSpent > 0) trackEvent('tempoTotalSegundos', timeSpent);
+                timeSent = true; 
+            }
+        });
         let allProducts = [];
         let curVista = "", curCartao = "", isEncomenda = false;
         let activeCategory = 'Todos';
@@ -413,6 +446,8 @@
             document.getElementById('formCode').value = cod;
             updatePrice();
             document.getElementById('purchaseModal').style.display = 'flex';
+trackEvent('clickComprar');
+trackProductClick(nome);
         };
 
         window.updatePrice = () => {
@@ -422,7 +457,12 @@
 
         window.closeModal = () => document.getElementById('purchaseModal').style.display = 'none';
 
-        window.sendWhatsApp = () => {
+       window.sendWhatsApp = () => {
+    const n = document.getElementById('userName').value, ci = document.getElementById('userCity').value, en = document.getElementById('userAddress').value;
+    if(!n || !ci || !en) return alert("Por favor, preencha seus dados de entrega!");
+saveStat('clickWhatsapp'); // ADICIONE ESTA LINHA AQUI
+
+trackEvent('clickWhatsapp');
             const n = document.getElementById('userName').value, ci = document.getElementById('userCity').value, en = document.getElementById('userAddress').value;
             if(!n || !ci || !en) return alert("Por favor, preencha seus dados de entrega!");
             const produto = document.getElementById('formProduct').value;
@@ -447,6 +487,7 @@
         };
 
         window.sendNotFoundWhatsApp = () => {
+	    trackEvent('clickSolicitar');
             const product = document.getElementById('nfProduct').value;
             const brand = document.getElementById('nfBrand').value;
             const obs = document.getElementById('nfObs').value;
@@ -456,6 +497,7 @@
 
             if(!product || !name || !city || !address) {
                 return alert("Por favor, preencha o Produto Desejado, seu Nome, Cidade e Endereço!");
+saveStat('clickSolicitar'); 
             }
 
             let msg = `*SOLICITAÇÃO DE PRODUTO - G&A ESSENCE*\n\n`;
@@ -483,6 +525,60 @@
                 });
             });
         }
+
+// --- SISTEMA DE ANALYTICS ISOLADO ---
+const sessionStart = Date.now();
+
+// Função universal para salvar dados
+const saveStat = async (field, value = increment(1), collectionName = "analytics", docId = "dadosGlobais") => {
+    try {
+        await setDoc(doc(db, collectionName, docId), { [field]: value }, { merge: true });
+    } catch (e) { console.error("Erro Analytics:", e); }
+};
+
+// 1. Rastreio de Acesso e Dispositivo
+window.addEventListener('load', () => {
+    const isNew = !localStorage.getItem('ga_essence_user');
+    if (isNew) localStorage.setItem('ga_essence_user', 'true');
+    
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    
+    saveStat('acessosTotais');
+    saveStat('sessoes');
+    if (isNew) saveStat('unicos');
+    saveStat(isMobile ? 'deviceMobile' : 'deviceDesktop');
+});
+
+// 2. Rastreio de Tempo (ao fechar ou sair da página)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        const timeSpent = Math.floor((Date.now() - sessionStart) / 1000);
+        if (timeSpent > 0) saveStat('tempoTotalSegundos', increment(timeSpent));
+    }
+});
+
+// 3. Rastreio de Cliques Global (Captura cliques em botões sem mexer neles)
+document.addEventListener('click', (e) => {
+    const target = e.target;
+
+    // Se clicou em "Comprar" ou "Fazer Pedido"
+    if (target.classList.contains('btn-buy')) {
+        saveStat('clickComprar');
+        // Tenta pegar o nome do produto que está no mesmo card
+        const productName = target.closest('.product-card')?.querySelector('.product-name')?.innerText;
+        if (productName) saveStat(productName, increment(1), "analytics", "rankingProdutos");
+    }
+
+    // Se clicou em links do WhatsApp (Cabeçalho ou Rodapé)
+    if (target.closest('a[href*="wa.me"]')) {
+        saveStat('clickWhatsapp');
+    }
+
+    // Se clicou no botão de "Solicitar agora" (Produto não encontrado)
+    if (target.classList.contains('btn-request') || target.innerText.includes('SOLICITAR')) {
+        saveStat('clickSolicitar');
+    }
+});
     </script>
 </body>
 </html>
