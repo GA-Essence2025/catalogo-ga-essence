@@ -2,7 +2,6 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-	<meta name="google-site-verification" content="googled9e70104e992bb62" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo G&A ESSENCE</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -288,8 +287,8 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+	import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJubljB6mFst0-VjvS06KtfNm6s3HGwJI",
@@ -311,42 +310,61 @@
             track.scrollBy({ left: track.clientWidth * dir, behavior: 'smooth' });
         };
 
-        async function loadProducts() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "catalogo"));
-                allProducts = [];
-                const categoryMap = {};
 
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if(data.ativo !== false) {
-                        let catsRaw = data.categoria || [];
-                        let cleanCats = Array.isArray(catsRaw) ? catsRaw : catsRaw.split(',').map(c => c.trim()).filter(c => c !== "");
-                        data.categoria = cleanCats;
-                        allProducts.push({ id: doc.id, ...data });
-                        cleanCats.forEach(cat => { categoryMap[cat] = (categoryMap[cat] || 0) + 1; });
-                    }
-                });
-
-                allProducts.sort((a, b) => (a.ordem_exibicao || 0) - (b.ordem_exibicao || 0));
-                document.getElementById('count-Todos').innerText = allProducts.length;
-
-                const filterBar = document.getElementById('categoryFilters');
-                Object.keys(categoryMap).sort().forEach(cat => {
-                    const btn = document.createElement('button');
-                    btn.className = 'filter-btn';
-                    btn.id = `btn-${cat}`;
-                    btn.innerHTML = `${cat} <span>${categoryMap[cat]}</span>`;
-                    btn.onclick = (e) => filterProducts(cat, e);
-                    filterBar.appendChild(btn);
-                });
-
-                render(allProducts);
-            } catch (e) {
-                console.error(e);
-                document.getElementById('productGrid').innerHTML = "<p style='text-align:center; width:100%; grid-column: 1 / -1;'>Erro ao carregar catálogo.</p>";
-            }
+async function loadProducts() {
+    console.log("Iniciando busca de produtos (Formato Lista)...");
+    
+    try {
+        const querySnapshot = await getDocs(collection(db, "produtos"));
+        const productsContainer = document.querySelector('.products-grid');
+        
+        if (!productsContainer) {
+            console.error("Grade de produtos não encontrada!");
+            return;
         }
+
+        productsContainer.innerHTML = ""; // Limpa a grade
+
+        querySnapshot.forEach((doc) => {
+            // O Firebase devolve os dados em um formato que podemos acessar pelo índice
+            const p = doc.data(); 
+
+            // LEITURA PELOS ÍNDICES QUE VOCÊ DEFINIU:
+            const fotoUrl = p[0] || 'https://via.placeholder.com/150';
+            const codigo = p[1] || "";
+            const nome = p[2] || "Produto";
+            const marca = p[3] || "";
+            const status = p[4] || "Disponível";
+            const precoVista = p[8] || "0,00";
+            const precoCartao = p[9] || "0,00";
+
+            // Filtro de Visibilidade (Índice 5)
+            // Se o status de visibilidade não for "Ativo", pula esse produto
+            if (p[5] !== "Ativo") return;
+
+            // Monta o Card
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <div class="product-image-wrapper">
+                    <img src="${fotoUrl}" alt="${nome}" onerror="this.src='https://via.placeholder.com/150'">
+                </div>
+                <h3>${nome}</h3>
+                <p class="marca">${marca}</p>
+                <p class="price-vista">À vista: R$ ${precoVista}</p>
+                <p class="price-cartao">No cartão: R$ ${precoCartao}</p>
+                <button class="buy-btn" onclick="openOrderModal('${nome}', '${precoVista}')">Comprar agora</button>
+            `;
+            
+            productsContainer.appendChild(card);
+        });
+        
+        console.log("Produtos carregados com sucesso!");
+
+    } catch (error) {
+        console.error("Erro ao carregar do Firestore:", error);
+    }
+}
 
         function render(list) {
             const grid = document.getElementById('productGrid');
@@ -354,10 +372,12 @@
             if(list.length === 0) { grid.innerHTML = "<p style='text-align:center; width:100%; color:var(--primary-gold); padding: 40px; grid-column: 1 / -1;'>Nenhum resultado encontrado.</p>"; return; }
             
             grid.innerHTML = list.map(p => {
-                const imgs = p.imagens && p.imagens.length > 0 ? p.imagens : [p.imagem_url || 'https://via.placeholder.com/400/0A0A0A/D4AF37?text=G%26A+ESSENCE'];
-                const imgsHTML = imgs.map(url => `<img src="${url}" class="product-img" loading="lazy">`).join('');
+                const imgs = p.foto ? [p.foto] : [];
+		const imgsHTML = imgs.length > 0 
+  		? `<img src="${imgs[0]}" class="product-img" loading="lazy">` 
+  		: `<img src="https://via.placeholder.com/400/0A0A0A/FFFFFF?text=Sem+Imagem" class="product-img" loading="lazy">`;
                 const esgotado = p.status === "Esgotado";
-                const displayCats = p.categoria.join(' | ');
+                const displayCats = p.categoria;
 
                 return `
                 <div class="product-card">
@@ -373,7 +393,7 @@
                         <p class="product-desc">${p.descricao || 'Fragrância exclusiva G&A Essence.'}</p>
                         <div class="price-box">
                             <span class="price-vista">R$ ${p.valor_vista || '0,00'} <small style="font-size:10px;">Pix</small></span>
-                            <span class="price-card">Cartão: R$ ${p.valor_cartao || '0,00'}</span>
+                            <span class="price-card">cartão: R$ ${p.valor_cartao || '0,00'}</span>
                         </div>
                         <button class="btn-buy ${esgotado ? 'btn-order' : ''}" 
                                 onclick="openModal('${p.nome}', '${p.codigo}', '${p.valor_vista}', '${p.valor_cartao}', ${esgotado})">
@@ -407,7 +427,7 @@
         };
 
         window.openModal = (nome, cod, vista, cartao, encomenda) => {
-            curVista = vista; curCartao = cartao; isEncomenda = encomenda;
+            valorVista = vista; valorCartao = cartao; isEncomenda = encomenda;
             document.getElementById('modalTitle').innerText = encomenda ? "Encomendar Produto" : "Finalizar Pedido";
             document.getElementById('btnFinalizar').innerHTML = encomenda ? '<i class="fab fa-whatsapp"></i> ENCOMENDAR AGORA' : '<i class="fab fa-whatsapp"></i> CONCLUIR COMPRA';
             document.getElementById('formProduct').value = nome;
@@ -418,7 +438,7 @@
 
         window.updatePrice = () => {
             const p = document.getElementById('userPayment').value;
-            document.getElementById('formPrice').value = p === 'Cartão' ? `R$ ${curCartao}` : `R$ ${curVista}`;
+            document.getElementById('formPrice').value = p === 'Cartão' ? `R$ ${valor_cartao}` : `R$ ${valor_vista}`;
         };
 
         window.closeModal = () => document.getElementById('purchaseModal').style.display = 'none';
