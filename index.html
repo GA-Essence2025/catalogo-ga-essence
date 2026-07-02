@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo G&A ESSENCE</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
@@ -210,6 +213,40 @@
             .price-vista { font-size: 0.95rem !important; }
             .btn-buy { font-size: 0.7rem !important; padding: 10px !important; }
         }
+
+        /* BARRA DE CATEGORIAS PREMIUM */
+.categories-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 10px 20px;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none; /* Oculta barra no Firefox */
+}
+.categories-container::-webkit-scrollbar {
+    display: none; /* Oculta barra no Chrome/Safari */
+}
+.category-btn {
+    background-color: var(--card-bg);
+    color: var(--text-light);
+    border: 1px solid #333;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.category-btn.active, .category-btn:hover {
+    background-color: var(--primary-gold);
+    color: #000;
+    border-color: var(--primary-gold);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+}
     </style>
 </head>
 <body>
@@ -544,13 +581,12 @@ window.openModal = (nome, cod, vista, cartao, encomenda) => {
         loadProducts();
     </script>
 	<script>
+       // FORÇA A LIMPEZA DO CACHE ANTIGO NO CELULAR DO CLIENTE
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(registration => {
-                    console.log('App G&A Essence registada com sucesso!');
-                }).catch(err => {
-                    console.log('Erro ao registar a App: ', err);
-                });
+             navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                 for(let registration of registrations) {
+                     registration.unregister();
+            }
             });
         }
     </script>
