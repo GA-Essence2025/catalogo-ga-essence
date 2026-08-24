@@ -406,6 +406,7 @@ async function loadProducts() {
             }
 
             allProducts.push({
+		ordem: Number(p.ordem) || 999,
                 foto: p.foto || "",
                 codigo: p.codigo || "",
                 nome: p.nome || "",
@@ -421,9 +422,11 @@ async function loadProducts() {
 
         });
 
+	allProducts.sort((a, b) => a.ordem - b.ordem);
         console.log("Produtos carregados:", allProducts.length);
 
         render(allProducts);
+	loadCategories();
 
     } catch (error) {
 
@@ -489,6 +492,7 @@ async function loadProducts() {
                 const matchesCategory = activeCategory === 'Todos' || p.categoria.includes(activeCategory);
                 return matchesSearch && matchesCategory;
             });
+
             render(filtered);
         };
 
